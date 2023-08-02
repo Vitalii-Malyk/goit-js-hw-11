@@ -1,0 +1,19 @@
+.container {
+  background-color: #35598d;
+  padding: 3px;
+}
+.search-form button {
+  background-color: rgb(165, 174, 174);
+  border-radius: 5px;
+  border-color: rgb(216, 226, 226);
+}
+
+.search-form input {
+  border-radius: 5px;
+  border-color: rgb(216, 226, 226);
+}
+
+.search-form {
+  display: flex;
+  justify-content: center;
+}
