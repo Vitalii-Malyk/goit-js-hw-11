@@ -14,49 +14,48 @@ loadmoreBTN.addEventListener('click', onLoadMore);
 function onSubmit(e) {
   e.preventDefault();
   if (e.currentTarget.elements.searchQuery.value.trim() === '') {
-    return Notify.failure(
-      'Sorry, there are no images matching your search query. Please try again.',
-      {
-        position: 'center-center',
-        timeout: '1000',
-        clickToClose: 'true',
-      }
-    );
+    return err();
   }
   clearGalleryContainer();
-  loadmoreBTN.classList.add('is-hidden');
+
   imageApiService.searchQuery = e.currentTarget.elements.searchQuery.value;
   imageApiService.resetPage();
 
   imageApiService.fetchImage().then(hits => {
-    if (hits.length === 0) {
-      Notify.failure(
-        'Sorry, there are no images matching your search query. Please try again.',
-        {
-          position: 'center-center',
-          timeout: '1000',
-          clickToClose: 'true',
-        }
-      );
+    if (hits.totalHits === 0) {
+      return err();
     } else {
-      console.log(hits);
+      message(hits.totalHits);
       markupGallery(hits);
+      // console.log(hits);
+      if (hits.totalHits > imageApiService.per_page) {
+        // console.log('Після перевірки: ', hits);
+        loadmoreBTN.classList.remove('is-hidden');
+      } else {
+        loadmoreBTN.classList.add('is-hidden');
+      }
     }
   });
 }
 
 function onLoadMore() {
-  imageApiService.fetchImage().then(data => {
-    markupGallery(data);
-    console.log(data);
+  imageApiService.fetchImage().then(hits => {
+    if (hits.totalHits <= imageApiService.page * imageApiService.per_page) {
+      markupGallery(hits);
+      loadmoreBTN.classList.add('is-hidden');
+      errFull();
+    } else {
+      loadmoreBTN.classList.remove('is-hidden');
+      console.log(hits.totalHits, imageApiService.per_page);
+      markupGallery(hits);
+    }
   });
 }
 
-function markupGallery(data) {
-  loadmoreBTN.classList.remove('is-hidden');
-  console.log(data);
-  const makeGalleryMarkup = data => {
-    const { webformatURL, tags, likes, views, comments, downloads } = data;
+function markupGallery({ hits }) {
+  //   console.log(hits);
+  const makeGalleryMarkup = hits => {
+    const { webformatURL, tags, likes, views, comments, downloads } = hits;
 
     return `
   <div class="photo-card">
@@ -83,11 +82,38 @@ function markupGallery(data) {
 `;
   };
 
-  const newGalleryMarkup = data.map(makeGalleryMarkup).join('');
+  const newGalleryMarkup = hits.map(makeGalleryMarkup).join('');
 
   galleryEl.insertAdjacentHTML('beforeend', newGalleryMarkup);
 }
 
 function clearGalleryContainer() {
   galleryEl.innerHTML = '';
+}
+
+function err() {
+  Notify.failure(
+    'Sorry, there are no images matching your search query. Please try again.',
+    {
+      position: 'center-center',
+      timeout: '1000',
+      clickToClose: 'true',
+    }
+  );
+}
+
+function errFull() {
+  Notify.failure("We're sorry, but you've reached the end of search results.", {
+    position: 'center-center',
+    timeout: '2000',
+    clickToClose: 'true',
+  });
+}
+
+function message(element) {
+  Notify.success(`Hooray! We found ${element} images.`, {
+    position: 'center-center',
+    timeout: '2000',
+    clickToClose: 'true',
+  });
 }
