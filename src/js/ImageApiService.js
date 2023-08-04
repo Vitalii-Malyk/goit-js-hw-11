@@ -1,31 +1,30 @@
+import axios from 'axios';
+
 export default class ImageApiService {
-  constructor() {
-    this.searchQuery = '';
-    this.page = 1;
-    this.per_page = 40;
-  }
+  #BASE_URL = 'https://pixabay.com/api/';
+  #KEY = '38612629-f2604cf2bc8cc8583c7392e39';
+  searchQuery = '';
+  page = 1;
+  per_page = 40;
 
   fetchImage() {
-    const options = {
-      key: '38612629-f2604cf2bc8cc8583c7392e39',
+    const searchParams = new URLSearchParams({
+      key: this.#KEY,
       q: `${this.searchQuery}`,
       image_type: 'photo',
       orientation: 'horizontal',
       safesearch: 'true',
-    };
-    const URL = 'https://pixabay.com/api/';
-    return fetch(
-      `${URL}?key=${options.key}&q=${options.q}&image_type=${options.image_type}&orientation=${options.orientation}&safesearch=${options.safesearch}&page=${this.page}&per_page=${this.per_page}`
-    )
-      .then(response => response.json())
-      .then(hits => {
-        this.incrementPage();
-        return hits;
-      });
+      page: `${this.page}`,
+      per_page: `${this.per_page}`,
+    });
+
+    return axios.get(`${this.#BASE_URL}?${searchParams}`);
   }
+
   incrementPage() {
     this.page += 1;
   }
+
   resetPage() {
     this.page = 1;
   }

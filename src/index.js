@@ -1,5 +1,4 @@
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
-import axios from 'axios';
 import ImageApiService from './js/ImageApiService';
 
 const formEl = document.querySelector('#search-form');
@@ -21,14 +20,16 @@ function onSubmit(e) {
   imageApiService.searchQuery = e.currentTarget.elements.searchQuery.value;
   imageApiService.resetPage();
 
-  imageApiService.fetchImage().then(hits => {
-    if (hits.totalHits === 0) {
+  imageApiService.fetchImage().then(({ data }) => {
+    console.log(data.totalHits);
+    if (data.totalHits === 0) {
       return err();
     } else {
-      message(hits.totalHits);
-      markupGallery(hits);
+      message(data.totalHits);
+      console.log(data.hits);
+      markupGallery(data.hits);
       // console.log(hits);
-      if (hits.totalHits > imageApiService.per_page) {
+      if (data.totalHits > imageApiService.per_page) {
         // console.log('Після перевірки: ', hits);
         loadmoreBTN.classList.remove('is-hidden');
       } else {
@@ -39,23 +40,27 @@ function onSubmit(e) {
 }
 
 function onLoadMore() {
-  imageApiService.fetchImage().then(hits => {
-    if (hits.totalHits <= imageApiService.page * imageApiService.per_page) {
-      markupGallery(hits);
+  imageApiService.incrementPage();
+  imageApiService.fetchImage().then(({ data }) => {
+    if (data.totalHits <= imageApiService.page * imageApiService.per_page) {
+      markupGallery(data.hits);
+      console.log(data.totalHits);
       loadmoreBTN.classList.add('is-hidden');
       errFull();
     } else {
+      console.log(data.totalHits);
       loadmoreBTN.classList.remove('is-hidden');
-      console.log(hits.totalHits, imageApiService.per_page);
-      markupGallery(hits);
+      console.log(data.totalHits, imageApiService.per_page);
+
+      markupGallery(data.hits);
     }
   });
 }
 
-function markupGallery({ hits }) {
+function markupGallery(data) {
   //   console.log(hits);
-  const makeGalleryMarkup = hits => {
-    const { webformatURL, tags, likes, views, comments, downloads } = hits;
+  const makeGalleryMarkup = data => {
+    const { webformatURL, tags, likes, views, comments, downloads } = data;
 
     return `
   <div class="photo-card">
@@ -82,7 +87,7 @@ function markupGallery({ hits }) {
 `;
   };
 
-  const newGalleryMarkup = hits.map(makeGalleryMarkup).join('');
+  const newGalleryMarkup = data.map(makeGalleryMarkup).join('');
 
   galleryEl.insertAdjacentHTML('beforeend', newGalleryMarkup);
 }
