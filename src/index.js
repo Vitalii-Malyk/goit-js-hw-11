@@ -1,11 +1,18 @@
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import ImageApiService from './js/ImageApiService';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
 
 const formEl = document.querySelector('#search-form');
 const loadmoreBTN = document.querySelector('.load-more');
 const galleryEl = document.querySelector('.gallery');
 
 const imageApiService = new ImageApiService();
+
+const lightbox = new SimpleLightbox('.gallery a', {
+  captionsData: 'Alt',
+  captionDelay: 250,
+});
 
 formEl.addEventListener('submit', onSubmit);
 loadmoreBTN.addEventListener('click', onLoadMore);
@@ -17,54 +24,72 @@ function onSubmit(e) {
   }
   clearGalleryContainer();
 
-  imageApiService.searchQuery = e.currentTarget.elements.searchQuery.value;
+  imageApiService.query = e.currentTarget.elements.searchQuery.value;
   imageApiService.resetPage();
 
-  imageApiService.fetchImage().then(({ data }) => {
-    console.log(data.totalHits);
-    if (data.totalHits === 0) {
-      return err();
-    } else {
-      message(data.totalHits);
-      console.log(data.hits);
-      markupGallery(data.hits);
-      // console.log(hits);
-      if (data.totalHits > imageApiService.per_page) {
-        // console.log('Після перевірки: ', hits);
-        loadmoreBTN.classList.remove('is-hidden');
+  imageApiService
+    .fetchImage()
+    .then(({ data }) => {
+      // console.log(data.totalHits);
+      if (data.totalHits === 0) {
+        return err();
       } else {
-        loadmoreBTN.classList.add('is-hidden');
+        message(data.totalHits);
+        // console.log(data.hits);
+        markupGallery(data.hits);
+        lightbox.refresh();
+
+        // console.log(hits);
+        if (data.totalHits > imageApiService.per_page) {
+          // console.log('Після перевірки: ', hits);
+          loadmoreBTN.classList.remove('is-hidden');
+        } else {
+          loadmoreBTN.classList.add('is-hidden');
+        }
       }
-    }
-  });
+    })
+    .catch(err => console.log(err));
 }
 
 function onLoadMore() {
   imageApiService.incrementPage();
-  imageApiService.fetchImage().then(({ data }) => {
-    if (data.totalHits <= imageApiService.page * imageApiService.per_page) {
-      markupGallery(data.hits);
-      console.log(data.totalHits);
-      loadmoreBTN.classList.add('is-hidden');
-      errFull();
-    } else {
-      console.log(data.totalHits);
-      loadmoreBTN.classList.remove('is-hidden');
-      console.log(data.totalHits, imageApiService.per_page);
-
-      markupGallery(data.hits);
-    }
-  });
+  imageApiService
+    .fetchImage()
+    .then(({ data }) => {
+      if (data.totalHits <= imageApiService.page * imageApiService.per_page) {
+        markupGallery(data.hits);
+        lightbox.refresh();
+        // console.log(data.totalHits);
+        loadmoreBTN.classList.add('is-hidden');
+        errFull();
+      } else {
+        // console.log(data.totalHits);
+        loadmoreBTN.classList.remove('is-hidden');
+        // console.log(data.totalHits, imageApiService.per_page);
+        markupGallery(data.hits);
+        lightbox.refresh();
+      }
+    })
+    .catch(err => console.log(err));
 }
 
 function markupGallery(data) {
   //   console.log(hits);
   const makeGalleryMarkup = data => {
-    const { webformatURL, tags, likes, views, comments, downloads } = data;
+    const {
+      largeImageURL,
+      webformatURL,
+      tags,
+      likes,
+      views,
+      comments,
+      downloads,
+    } = data;
 
     return `
+  <a class="gallery_link" href="${largeImageURL}">
   <div class="photo-card">
-  <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+  <img src="${webformatURL}" alt="${tags}" loading="lazy"/>
   <div class="info">
     <p class="info-item">
       <b>Likes</b>
@@ -84,6 +109,7 @@ function markupGallery(data) {
     </p>
   </div>
 </div>
+</a>
 `;
   };
 
