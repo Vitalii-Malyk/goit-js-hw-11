@@ -32,6 +32,7 @@ function onSubmit(e) {
     .then(({ data }) => {
       // console.log(data.totalHits);
       if (data.totalHits === 0) {
+        loadmoreBTN.classList.add('is-hidden');
         return err();
       } else {
         message(data.totalHits);
